@@ -33,9 +33,11 @@ except ImportError as exc:
 
 # Keep the old public function names available for existing experiments/tests.
 from gm_core import policy_pick, rationale_flags, resolve_decision
+from gm_core.llm import llm_choice
+from gm_core.ollama import verify_gpu, unload_model
 
 
-def play(episode, params, mode, margin, model, base, ai_choice=sim.llm_choice):
+def play(episode, params, mode, margin, model, base, ai_choice=llm_choice):
     assert mode in ('alone', 'advised', 'guarded')
     signings = []
     history = []
@@ -141,7 +143,7 @@ def main():
     }
     totals = {k: 0.0 for k in ['alone', 'advised', 'guarded', 'greedy', 'learned']}
     try:
-        sim.verify_gpu(args.base, args.model)
+        verify_gpu(args.base, args.model)
         for number, episode in enumerate(episodes, 1):
             print(f'\n=== V5 Episode {args.start_episode + number - 1} ===', flush=True)
             results = {}
@@ -171,8 +173,7 @@ def main():
         print(f'Experiment stopped safely: {exc}', file=sys.stderr, flush=True)
     finally:
         try:
-            sim.api(args.base, '/api/generate', {'model': args.model,
-                'stream': False, 'keep_alive': 0}, timeout=45)
+            unload_model(args.base, args.model)
             print('Model unloaded.', flush=True)
         except Exception:
             print('Model unload could not be verified; check /api/ps.', flush=True)
