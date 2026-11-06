@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -32,28 +31,8 @@ except ImportError as exc:
     ) from exc
 
 
-def policy_pick(episode, signings, year, params):
-    """Return trained-policy choice and estimated scores at CURRENT team state."""
-    legal = sim.available_offers(episode, signings, year)
-    scores = sim.learned_estimates(episode, signings, year, params)
-    best = max(legal, key=lambda p: (scores[p['id']], -p['cost']), default=None)
-    if best is not None and scores[best['id']] > 0:
-        return best['id'], scores
-    return 'PASS', scores
-
-
-def rationale_flags(reason, scores, cap):
-    """Very narrow text checks, NOT a general factual-verification engine."""
-    flags = []
-    text = reason.lower()
-    if re.search(r'(all|every)\s+(?:legal\s+)?(?:offers?|players?|options?)\b.{0,75}'
-                 r'(?:negative|no\s+positive|not\s+worth|low\s+value)', text):
-        if any(v > 0 for v in scores.values()):
-            flags.append('Reason suggests all offers have low/negative value, but at least one policy score is positive')
-    if re.search(r'(?:cap|salary\s+cap)\s+(?:is\s+)?(?:fully\s+used|exhausted|at\s+zero)', text):
-        if cap > 0:
-            flags.append(f'Reason claims cap is exhausted, but current available cap is {cap}')
-    return flags
+# Keep the old public function names available for existing experiments/tests.
+from gm_core import policy_pick, rationale_flags, resolve_decision
 
 
 def play(episode, params, mode, margin, model, base, ai_choice=sim.llm_choice):
@@ -72,26 +51,16 @@ def play(episode, params, mode, margin, model, base, ai_choice=sim.llm_choice):
         recommended, scores = policy_pick(episode, signings, year, params)
         advice = scores if mode == 'advised' else None
         proposal = ai_choice(episode, signings, history, year, model, base, advice)
-        raw = proposal.get('choice', 'PASS')
-        proposal_id = str(raw).strip().upper()
-        invalid = bool(proposal.get('invalid', False)) or (proposal_id != 'PASS' and proposal_id not in legal_by_id)
-        # An invalid proposal becomes PASS for the unguarded/advised condition.
-        # Guarded mode instead permits a legal policy fallback.
-        effective_proposal = 'PASS' if invalid else proposal_id
-        chosen = effective_proposal
-        override_reason = ''
-        estimated_gain = round(scores.get(recommended, 0.0) - scores.get(effective_proposal, 0.0), 3)
+        decision = resolve_decision(proposal, legal_by_id, recommended, scores, mode, margin)
+        proposal_id = decision.proposal_id
+        invalid = decision.invalid
+        chosen = decision.final_action
+        override_reason = decision.override_reason
+        estimated_gain = decision.estimated_gain
         if invalid:
             rejected_count += 1
-        if mode == 'guarded':
-            if invalid:
-                chosen = recommended
-                override_reason = 'Invalid AI proposal; use legal policy recommendation'
-            elif recommended != effective_proposal and estimated_gain >= margin:
-                chosen = recommended
-                override_reason = f'Policy estimated gain {estimated_gain:+.3f} >= threshold {margin:.3f}'
-            if chosen != effective_proposal:
-                override_count += 1
+        if mode == 'guarded' and chosen != decision.effective_proposal:
+            override_count += 1
         reason = str(proposal.get('reason', ''))
         flags = rationale_flags(reason, scores, cap_left)
         flagged_count += len(flags)
