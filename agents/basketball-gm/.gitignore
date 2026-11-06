@@ -1,0 +1,17 @@
+# Local Python/runtime files
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+
+# Experiment outputs should be stored outside the repository
+BBGMDeckAgentLab/
+outputs/
+reports/
+*.gguf
+*.safetensors
+
+# If copied into this module from the Deck, keep personal experiment logs untracked
+agent_memory.json
+policy_v2.json
