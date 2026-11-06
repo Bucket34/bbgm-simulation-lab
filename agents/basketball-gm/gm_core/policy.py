@@ -1,7 +1,7 @@
-"""Adapter for the frozen V5 learned policy; not Qwen weight training."""
+"""Adapter for the frozen V5-compatible toy policy; not Qwen weight training."""
 from __future__ import annotations
 
-import bbgm_deck_multiseason_v5 as sim
+from . import simulator as sim
 
 
 def policy_pick(episode, signings, year, params):

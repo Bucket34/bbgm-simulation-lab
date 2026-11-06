@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BBGM Deck V5.1 — audited multi-season decision controller.
 
-Runs the exact toy league engine from bbgm_deck_multiseason_v5.py.
+Runs the V5-compatible synthetic engine in gm_core.simulator.
 Three separate Qwen3 closed-loop management modes on identical initial episodes:
   alone   - independent Qwen choice, validated for legality
   advised - Qwen sees frozen Python policy estimates and may disagree
@@ -22,13 +22,7 @@ import json
 import sys
 from pathlib import Path
 
-try:
-    import bbgm_deck_multiseason_v5 as sim
-except ImportError as exc:
-    raise SystemExit(
-        "Could not import bbgm_deck_multiseason_v5.py. Save both files "
-        "in the same folder (e.g. ~/Downloads)."
-    ) from exc
+from gm_core import simulator as sim
 
 
 # Keep the old public function names available for existing experiments/tests.

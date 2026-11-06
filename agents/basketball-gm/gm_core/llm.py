@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from bbgm_deck_multiseason_v5 import available_offers
+from .simulator import available_offers
 from .ollama import api
 
 
