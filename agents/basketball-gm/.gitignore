@@ -15,3 +15,8 @@ reports/
 # If copied into this module from the Deck, keep personal experiment logs untracked
 agent_memory.json
 policy_v2.json
+
+# Never accidentally commit personal or large BBGM league exports
+league-exports/
+*.json.gz
+BBGM_*.json

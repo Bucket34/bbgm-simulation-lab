@@ -12,6 +12,7 @@ engine, alter league saves, or retrain Qwen3.
 | `rationale.py` | Narrow, deterministic warnings about misleading explanations |
 | `llm.py` | Build synthetic GM prompts, validate model JSON, propose signings |
 | `ollama.py` | Local Ollama JSON API, GPU-allocation check, model unload |
+| `bbgm_export.py` | Read-only normalizer for **real** BBGM league exports, no game actions |
 
 `bbgm_deck_guardrails_v5_1.py` remains the V5.1 command-line entry point and
 now uses these modules. The historical `bbgm_deck_multiseason_v5.py` remains
@@ -52,3 +53,10 @@ with separate validation and explicit, permission-controlled writes.
 
 The new offline tests compare core results against the frozen V5 source for
 multiple episode seeds, policies, and seasons; no model or internet needed.
+
+## Phase 4 — Actual BBGM export inspection (read-only)
+
+`bbgm_export.py` is independent of the synthetic V5 `simulator.py`. It can read
+Basketball GM JSON/JSON.gz league exports, normalize selected player/team fields,
+and list rosters. It does not change any state or claim to execute actual games.
+See `../BBGM_INTEGRATION.md` for the export workflow and limitations.
